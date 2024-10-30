@@ -40,8 +40,47 @@ class CSP:
                 del assignment[var]
         
         return None
+    
+    def ac3(self):
+        # Implémenter l'algorithme AC3
+        queue = [(x, y) for x in self.variables for y in self.variables if x != y]
+        print("les arcs a traiter sont", queue)
+        print("les contraintes sont", self.constraints)
 
-    def solve(self):
+        while queue:
+            x, y = queue.pop(0)
+            print("on enleve de queue l'arc", x, y)
+            for i in self.domains[x]:
+                if self.not_supported(x, y, i):
+                    self.domains[x].remove(i)
+                    print(f"on enleve {i} du domaine de {x}")
+                    for j in self.domains[y]:
+                        self.constraints[x][j] = [(a, b) for a, b in self.constraints[x][j] if a != i]
+                        self.constraints[j][x] = [(a, b) for a, b in self.constraints[j][x] if b != i]
+                    print("i", i, self.constraints[x][y])
+                    # on ajoute les arcs si ils n'y sont pas deja
+                    arc_to_add = [(z, x) for z in self.variables if z != x]
+                    queue.extend([arc for arc in arc_to_add if arc not in queue])
+                    print(f"les contraintes pour l'arc {x, y} sont", self.constraints[x][y])
+                    print("on ajoute les arcs", [arc for arc in arc_to_add if arc not in queue], "de", [(z, x) for z in self.variables if z != x])
+                    print("les arcs a traiter sont", queue)
+                    print("les nouvelles contraintes sont", self.constraints)
+                if len(self.domains[i]) == 0:
+                    return False
+                
+        return True
+    
+    def not_supported(self, x, y, i):
+        if not any([(i, j) in self.constraints[x][y] for j in self.domains[y]]):
+            return True
+        return False
+    
+     
+    def solve(self, use_ac3=True):
+        # Appliquer AC3 pour réduire les domaines
+        if use_ac3:
+            if not self.ac3():
+                return "No solution found"
         result = self.backtrack()
         if result is None:
             return "No solution found"
@@ -61,13 +100,14 @@ class N_QUEENS(CSP):
 
         for i in range(n):
             for j in range(n):
-                possible_positions = []
-                for k in range(n):
-                    for l in range(n):
-                        # Les dames ne doivent pas être sur la même ligne, la même colonne ou la même diagonale
-                        if k != l and abs(i - j) != abs(k - l):
-                            possible_positions.append((k, l))
-                constraints[i][j] = possible_positions
+                if i != j:
+                    possible_positions = []
+                    for k in range(n):
+                        for l in range(n):
+                            # Les dames ne doivent pas être sur la même ligne, la même colonne ou la même diagonale
+                            if k != l and abs(i - j) != abs(k - l):
+                                possible_positions.append((k, l))
+                    constraints[i][j] = possible_positions
 
         return constraints
     
@@ -117,13 +157,15 @@ class N_QUEENS(CSP):
         
 
         
-n = 4
+n = 3
 n_queens = N_QUEENS(n)
 print(n_queens.variables)
 print(n_queens.domains)
 print(n_queens.constraints[1][2])
-sol = n_queens.solve()
+sol = n_queens.solve(use_ac3=True)
 print(sol)
-n_queens.solution_printer(sol)
-n_queens.solution_display(sol)
+if sol != "No solution found":
+    n_queens.solution_printer(sol)
+    n_queens.solution_display(sol)
+
 

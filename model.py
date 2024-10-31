@@ -1,11 +1,13 @@
-
+import random
 
 class CSP:
-    def __init__(self, variables, domains, constraints):
+    def __init__(self, variables, domains, constraints, var_heuristic="static", val_heuristic="static"):
         self.variables = variables
         self.var_to_index = {var: i for i, var in enumerate(variables)}
         self.domains = domains
         self.constraints = constraints # array of list of tuples , position [i][j] is a list of tuples that are compatible for variable i and j
+        self.var_heuristic = var_heuristic
+        self.val_heuristic = val_heuristic
     
     def is_consistent(self, var, value, assignment):
         # Vérifier si l'assignation est consistante avec les contraintes existantes
@@ -20,17 +22,49 @@ class CSP:
                         return False
         return True
 
+    def select_unassigned_variable(self, assignment):
+        #Sélectionne la prochaine variable non assignée en fonction de l'heuristique choisie
+        unassigned_vars = [v for v in self.variables if v not in assignment]
+
+        if self.var_heuristic == "static":
+            return unassigned_vars[0]  # Sélection de la première variable dans l'ordre statique
+        elif self.var_heuristic == "MRV":
+            # Minimum Remaining Values (MRV): Choisir la variable avec le moins de valeurs possibles dans son domaine
+            return min(unassigned_vars,
+                       key=lambda var: len([value for value in self.domains[var] if self.is_consistent(var, value, assignment)]))
+        elif self.var_heuristic == "degree":
+            # Degree Heuristic: Choisir la variable avec le plus de contraintes sur les autres variables non assignées
+            return max(unassigned_vars, key=lambda var: sum(
+                1 for other_var in self.variables if other_var != var and other_var not in assignment))
+        else:
+            raise ValueError("Heuristique non reconnue. Choisissez entre 'static', 'MRV', ou 'degree'.")
+
+    def order_domain_values(self, var):
+        """Ordre les valeurs possibles de la variable selon l'heuristique de choix des valeurs."""
+        if self.val_heuristic == "static":
+            return self.domains[var]
+        elif self.val_heuristic == "inverse":
+            return sorted(self.domains[var], reverse=True)
+        elif self.val_heuristic == "random":
+            values = list(self.domains[var])
+            random.shuffle(values)
+            return values
+        else:
+            raise ValueError("Heuristique non reconnue. Choisissez entre 'static', 'inverse', ou 'random'.")
+
+
     def backtrack(self, assignment={}):
         # Si toutes les variables sont assignées, retourner l'assignation
         # print("assignment", assignment)
         if len(assignment) == len(self.variables):
             return assignment
         # Sélectionner une variable non assignée
-        unassigned_vars = [v for v in self.variables if v not in assignment]
+        unassigned_vars = self.select_unassigned_variable(assignment)
         #  print("unassigned_vars", unassigned_vars)
-        var = unassigned_vars[0]
+        var = unassigned_vars
         # Essayer chaque valeur du domaine de la variable
-        for value in self.domains[var]:
+        search_domain = self.order_domain_values(var)
+        for value in search_domain:
             if self.is_consistent(var, value, assignment):
                 # Assigner la valeur à la variable
                 assignment[var] = value

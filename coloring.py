@@ -6,7 +6,7 @@ import matplotlib.cm as cm
 import numpy as np
 
 class COLORING(CSP):
-    def __init__(self, file_path, nb_colors):
+    def __init__(self, file_path, nb_colors, var_heuristic="static", val_heuristic="static"):
         self.graph = self.read_file_col(file_path)
         print(self.graph)
         self.nb_colors = nb_colors
@@ -14,7 +14,7 @@ class COLORING(CSP):
         domains = {var: list(range(nb_colors)) for var in variables}
         self.var_to_index = {var: i for i, var in enumerate(variables)}
         constraints = self.generate_constraints()
-        super().__init__(variables, domains, constraints)
+        super().__init__(variables, domains, constraints, var_heuristic, val_heuristic)
     
     def read_file_col(self, file_path):
         with open(file_path, 'r') as file:

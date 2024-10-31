@@ -6,7 +6,7 @@ import matplotlib.pyplot as plt
 times = []  
 n_max = 20
 for n in range(4, n_max):
-    n_queens = N_QUEENS(n)
+    n_queens = N_QUEENS(n, "MRV", "random")
     start = time.time()
     sol = n_queens.solve(use_ac3=True)
     end = time.time()

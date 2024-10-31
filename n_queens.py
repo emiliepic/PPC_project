@@ -3,12 +3,12 @@ import matplotlib.pyplot as plt
 from model import CSP
 
 class N_QUEENS(CSP):
-    def __init__(self, n):
+    def __init__(self, n, var_heuristic="static", val_heuristic="static"):
         self.n = n
         variables = list(range(n))
         domains = {var: list(range(n)) for var in variables}
         constraints = self.generate_constraints()
-        super().__init__(variables, domains, constraints)
+        super().__init__(variables, domains, constraints, var_heuristic, val_heuristic)
     
     def generate_constraints(self):
         constraints = [[None for _ in range(self.n)] for _ in range(self.n)]

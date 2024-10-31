@@ -5,34 +5,36 @@ import matplotlib.pyplot as plt
 import matplotlib.cm as cm
 import numpy as np
 
+def read_file_col(file_path):
+    with open(file_path, 'r') as file:
+        lines = file.readlines()
+    vertices = []
+    graph = nx.Graph()
+    for line in lines:
+        #print(line)
+        if line.startswith('e'):
+            _, vertex_1, vertex_2 = line.split()
+            if vertex_1 not in vertices:
+                vertices.append(vertex_1)
+            if vertex_2 not in vertices:
+                vertices.append(vertex_2)
+            graph.add_edge(int(vertex_1), int(vertex_2))
+    # print(vertices)
+    print("nb vertices:", len(vertices))
+    return graph
+
 class COLORING(CSP):
-    def __init__(self, file_path, nb_colors, var_heuristic="static", val_heuristic="static"):
-        self.graph = self.read_file_col(file_path)
+    def __init__(self, file_path, nb_colors):
+        self.graph = read_file_col(file_path)
         print(self.graph)
         self.nb_colors = nb_colors
         variables = list(self.graph.nodes())
         domains = {var: list(range(nb_colors)) for var in variables}
         self.var_to_index = {var: i for i, var in enumerate(variables)}
         constraints = self.generate_constraints()
-        super().__init__(variables, domains, constraints, var_heuristic, val_heuristic)
+        super().__init__(variables, domains, constraints)
     
-    def read_file_col(self, file_path):
-        with open(file_path, 'r') as file:
-            lines = file.readlines()
-        vertices = []
-        graph = nx.Graph()
-        for line in lines:
-            #print(line)
-            if line.startswith('e'):
-                _, vertex_1, vertex_2 = line.split()
-                if vertex_1 not in vertices:
-                    vertices.append(vertex_1)
-                if vertex_2 not in vertices:
-                    vertices.append(vertex_2)
-                graph.add_edge(int(vertex_1), int(vertex_2))
-        # print(vertices)
-        print("nb vertices:", len(vertices))
-        return graph
+    
     
     def generate_constraints(self):
         constraints = [[None for _ in range(len(self.graph.nodes()))] for _ in range(len(self.graph.nodes()))]
@@ -113,13 +115,37 @@ data_path = os.path.join(project_path,"instances/coloring")
 file_name = "david.col.txt"
 file_path = os.path.join(data_path,file_name)
 
-graph = COLORING(file_path, 10)
+def dichotomic_search(file_path, use_ac3=True, time_limit=20):
+    graph = read_file_col(file_path)
+    nb_max_colors = len(graph.nodes())
+    nb_min_colors = 1
+    nb_colors = (nb_max_colors + nb_min_colors) // 2
+    while nb_max_colors - nb_min_colors > 1:
+        print("nb_min_colors", nb_min_colors)
+        print("nb_max_colors", nb_max_colors)
+        print("nb_colors", nb_colors)
+        graph = COLORING(file_path, nb_colors)
+        # stop the execution before time is higher than time_limit
+        sol = graph.solve(use_ac3=use_ac3, time_limit=time_limit)
+        if sol == "No solution found":
+            nb_min_colors = nb_colors
+        else:
+            nb_max_colors = nb_colors
+        nb_colors = (nb_max_colors + nb_min_colors) // 2
+        
+    return nb_max_colors
+
+print(dichotomic_search(file_path, use_ac3=True, time_limit=20))
+
+graph = COLORING(file_path, 11)
 print(graph.variables)
 print(graph.domains)
 print(graph.constraints[1][2])
 sol = graph.solve(use_ac3=True)
 print(sol)
 graph.display_sol(sol)
+
+
 
 
 

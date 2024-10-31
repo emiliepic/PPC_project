@@ -54,7 +54,8 @@ class CSP:
             raise ValueError("Heuristique non reconnue. Choisissez entre 'static', 'inverse', ou 'random'.")
 
 
-    def backtrack(self, assignment={}, time_limit=None, time_start=None):
+    def backtrack(self, assignment={}, domains=None, fc=False, time_limit=None, time_start=None):
+        # print("assignment", assignment)
         # Si toutes les variables sont assignées, retourner l'assignation
         # print("assignment", assignment)
         if len(assignment) == len(self.variables):
@@ -65,25 +66,56 @@ class CSP:
         var = unassigned_vars
         # Essayer chaque valeur du domaine de la variable
         search_domain = self.order_domain_values(var)
+        new_domains = self.domains.copy()
         for value in search_domain:
             if time_limit is not None:
                 if time.time() - time_start > time_limit:
                     print("time limit reached")
                     return None
             if self.is_consistent(var, value, assignment):
+                if fc:
+                    # Vérifier si l'assignation est consistante avec les contraintes restantes
+                    # print("variable", var, "value", value)
+                    # print("domains", domains, "new_domains", new_domains)
+                    res_fc = self.forward_checking(var, value, assignment, domains)
+                    if res_fc is None:
+                        continue
+                    new_domains = res_fc
                 # Assigner la valeur à la variable
                 assignment[var] = value
                 # Continuer la recherche récursive
-
-                result = self.backtrack(assignment, time_limit=time_limit, time_start=time_start)
+                if fc:
+                    result = self.backtrack(assignment, new_domains, fc=fc, time_limit=time_limit, time_start=time_start)
+                else:
+                    result = self.backtrack(assignment, domains, fc=fc, time_limit=time_limit, time_start=time_start)
                 if result is not None:
                     return result
                 
                 # Si cela ne mène pas à une solution, annuler l'assignation
                 del assignment[var]
+                
         
         return None
     
+    def forward_checking(self, var, value, assignment, domains):
+        # Mettre à jour les domaines des variables non assignées
+        # print("forward checking")
+        new_domains = domains.copy()
+        for other_var in self.variables:
+            if other_var not in assignment and other_var != var:
+                ind_var = self.var_to_index[var]
+                ind_other_var = self.var_to_index[other_var]
+                if self.constraints[ind_var][ind_other_var] is not None:
+                    # print("les contraintes sont", self.constraints[ind_var][ind_other_var])
+                    # print("la valeur est", value)
+                    # print("les valeurs possibles sont", new_domains[other_var])
+                    new_domains[other_var] = [val for val in new_domains[other_var] if (value, val) in self.constraints[ind_var][ind_other_var]]
+                    # print("les nouvelles valeurs possibles sont", new_domains[other_var])
+                    if len(new_domains[other_var]) == 0:
+                        # print("empty list")
+                        return None
+        return new_domains
+
     def ac3(self, time_limit=None, time_start=None):
         # Implémenter l'algorithme AC3
         queue = [(x, y) for x in self.variables for y in self.variables if self.constraints[self.var_to_index[x]][self.var_to_index[y]] is not None]
@@ -131,8 +163,9 @@ class CSP:
                 return True
         return False
     
+    
      
-    def solve(self, use_ac3=True, time_limit=None):
+    def solve(self, use_ac3=True, fc=False, time_limit=None):
         # Appliquer AC3 pour réduire les domaines
         time_start = time.time()
         if use_ac3:
@@ -143,7 +176,7 @@ class CSP:
                 return "No solution found"
         print("AC3 done after", time.time() - time_start)
         assignment = {}
-        result = self.backtrack(assignment=assignment, time_limit=time_limit, time_start=time_start)
+        result = self.backtrack(assignment=assignment, domains=self.domains.copy(), fc=fc, time_limit=time_limit, time_start=time_start)
         if result is None:
             return "No solution found"
         else:

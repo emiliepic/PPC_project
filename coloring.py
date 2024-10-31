@@ -75,6 +75,13 @@ class COLORING(CSP):
         nx.draw(G, with_labels=True, node_color=colors, node_size=400, font_color='white', font_weight='bold')
         plt.show()
     
+    def is_feasible(self, solution):
+        for edge in self.graph.edges():
+            vertex_1, vertex_2 = edge
+            if solution[vertex_1] == solution[vertex_2]:
+                return False
+        return True
+    
 
 class SMALL_COLORING(CSP):
     def __init__(self, edges, nb_colors):
@@ -115,6 +122,17 @@ data_path = os.path.join(project_path,"instances/coloring")
 file_name = "david.col.txt"
 file_path = os.path.join(data_path,file_name)
 
+graph = COLORING(file_path, 11)
+print(graph.variables)
+print(graph.domains)
+print(graph.constraints[1][2])
+sol = graph.solve(use_ac3=True)
+print(sol)
+print(graph.is_feasible(sol))
+
+graph.display_sol(sol)
+
+
 def dichotomic_search(file_path, use_ac3=True, time_limit=20):
     graph = read_file_col(file_path)
     nb_max_colors = len(graph.nodes())
@@ -137,13 +155,7 @@ def dichotomic_search(file_path, use_ac3=True, time_limit=20):
 
 print(dichotomic_search(file_path, use_ac3=True, time_limit=20))
 
-graph = COLORING(file_path, 11)
-print(graph.variables)
-print(graph.domains)
-print(graph.constraints[1][2])
-sol = graph.solve(use_ac3=True)
-print(sol)
-graph.display_sol(sol)
+
 
 
 

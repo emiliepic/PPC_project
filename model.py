@@ -1,3 +1,4 @@
+import time
 import random
 
 class CSP:
@@ -53,7 +54,7 @@ class CSP:
             raise ValueError("Heuristique non reconnue. Choisissez entre 'static', 'inverse', ou 'random'.")
 
 
-    def backtrack(self, assignment={}):
+    def backtrack(self, assignment={}, time_limit=None, time_start=None):
         # Si toutes les variables sont assignées, retourner l'assignation
         # print("assignment", assignment)
         if len(assignment) == len(self.variables):
@@ -65,19 +66,25 @@ class CSP:
         # Essayer chaque valeur du domaine de la variable
         search_domain = self.order_domain_values(var)
         for value in search_domain:
+            if time_limit is not None:
+                if time.time() - time_start > time_limit:
+                    print("time limit reached")
+                    return None
             if self.is_consistent(var, value, assignment):
                 # Assigner la valeur à la variable
                 assignment[var] = value
                 # Continuer la recherche récursive
-                result = self.backtrack(assignment)
+
+                result = self.backtrack(assignment, time_limit=time_limit, time_start=time_start)
                 if result is not None:
                     return result
+                
                 # Si cela ne mène pas à une solution, annuler l'assignation
                 del assignment[var]
         
         return None
     
-    def ac3(self):
+    def ac3(self, time_limit=None, time_start=None):
         # Implémenter l'algorithme AC3
         queue = [(x, y) for x in self.variables for y in self.variables if self.constraints[self.var_to_index[x]][self.var_to_index[y]] is not None]
         print(len(queue))
@@ -85,6 +92,10 @@ class CSP:
         # print("les contraintes sont", self.constraints)
 
         while queue:
+            if time_limit is not None:
+                if time.time() - time_start > time_limit:
+                    print("time limit reached")
+                    return None
             x, y = queue.pop(0)
             ind_x = self.var_to_index[x]
             ind_y = self.var_to_index[y]
@@ -121,13 +132,18 @@ class CSP:
         return False
     
      
-    def solve(self, use_ac3=True):
+    def solve(self, use_ac3=True, time_limit=None):
         # Appliquer AC3 pour réduire les domaines
+        time_start = time.time()
         if use_ac3:
-            if not self.ac3():
+            result_ac3 = self.ac3(time_limit=time_limit, time_start=time_start)
+            if result_ac3 is None:
                 return "No solution found"
+            if not result_ac3:
+                return "No solution found"
+        print("AC3 done after", time.time() - time_start)
         assignment = {}
-        result = self.backtrack(assignment=assignment)
+        result = self.backtrack(assignment=assignment, time_limit=time_limit, time_start=time_start)
         if result is None:
             return "No solution found"
         else:

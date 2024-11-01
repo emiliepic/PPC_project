@@ -69,18 +69,19 @@ def plot_time_vs_instances_different_methods(instances, methods, type_problem="n
         plt.legend()
         plt.show()
 
+
 def plot_from_csv(type_problem):
     """
     Plot resolution time for instances and methods from a saved CSV file.
     :param file_path: path to the CSV file with saved results
     """
-    # Initialiser un dictionnaire pour stocker les temps d'exécution par méthode
+    # Initialize a dictionary to store execution times per method
     data = {}
     instances = set()
 
     file_path = os.path.join(os.getcwd(), "results", f"{type_problem}_results.csv")
 
-    # Lire le fichier CSV
+    # Read the CSV file
     with open(file_path, 'r') as csvfile:
         reader = csv.DictReader(csvfile)
         for row in reader:
@@ -88,33 +89,41 @@ def plot_from_csv(type_problem):
                 instance = int(row['instance'])
             elif type_problem == "coloring":
                 instance = row['instance']
-            
+
             method_key = (row['use_ac3'], row['fc'], row['var_heuristic'], row['val_heuristic'])
             execution_time = float(row['execution_time'])
-            
-            # Ajouter l'instance et son temps d'exécution
+
+            # Add instance and its execution time
             instances.add(instance)
             if method_key not in data:
                 data[method_key] = {}
             data[method_key][instance] = execution_time
 
-    # Convertir les instances en une liste triée
+    # Convert instances to a sorted list
     instances = sorted(list(instances))
 
-    # Tracer les temps d'exécution pour chaque méthode
+    # Plot execution times for each method
     for method_key, times in data.items():
         use_ac3, fc, var_heuristic, val_heuristic = method_key
         label = f'AC3: {use_ac3}, FC: {fc}, Var Heuristic: {var_heuristic}, Val Heuristic: {val_heuristic}'
-        # Obtenir les temps d'exécution dans l'ordre des instances
-        execution_times = [times[instance] for instance in instances]
-        plt.plot(instances, execution_times, label=label)
 
-    # Ajouter des détails au graphique
+        # Get execution times in order of instances, handling missing values
+        execution_times = [times.get(instance, None) for instance in instances]
+
+        # Filter out None values (instances with no execution time)
+        valid_instances = [instance for instance, time in zip(instances, execution_times) if time is not None]
+        valid_times = [time for time in execution_times if time is not None]
+
+        if valid_times:  # Only plot if there is data
+            plt.plot(valid_instances, valid_times, label=label)
+
+    # Add details to the plot
     plt.xlabel("Instance")
     plt.ylabel("Time (s)")
     plt.title("Resolution Time from CSV Data")
     plt.legend()
     plt.show()
+
 
 file_path = os.path.join(os.getcwd(), "results", "n_queens_results.csv")
 file_path = os.path.join(os.getcwd(), "results", "coloring_results.csv")
@@ -122,7 +131,7 @@ plot_from_csv("n_queens")
 plot_from_csv("coloring")
 
 # coloring_instances = ["myciel3.col.txt", "myciel4.col.txt", "myciel5.col.txt", "myciel6.col.txt", "myciel7.col.txt"]
-coloring_instances = ["myciel3.col.txt", "mycie4.col.txt"]
+coloring_instances = ["myciel3.col.txt", "myciel4.col.txt"]
 coloring_instances = [os.path.join("instances", "coloring", instance) for instance in coloring_instances]
 queen_instances = range(4, 15)
 

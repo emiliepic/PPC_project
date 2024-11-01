@@ -155,7 +155,7 @@ class CSP:
             for i in self.domains[x]:
                 if self.not_supported(x, y, i):
                     self.domains[x].remove(i)
-                    # print(f"on enleve {i} du domaine de {x}")
+                    print(f"on enleve {i} du domaine de {x}")
                     for z in self.variables:
                         if z != x:
                             ind_z = self.var_to_index[z]
@@ -188,8 +188,11 @@ class CSP:
     def solve(self, use_ac3=True, fc=False, time_limit=None):
         # Appliquer AC3 pour réduire les domaines
         time_start = time.time()
+
         if use_ac3:
             result_ac3 = self.ac3(time_limit=time_limit, time_start=time_start)
+            # comparer les contraintes avant et après ac3
+            
             if result_ac3 is None:
                 return "No solution found"
             if not result_ac3:

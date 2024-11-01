@@ -2,10 +2,14 @@ from n_queens import N_QUEENS
 import time
 import matplotlib.pyplot as plt
 
-n = 4
-n_queens_test = N_QUEENS(n)
+n = 20
+start = time.time()
+n_queens_test = N_QUEENS(n, var_heuristic="MRV", val_heuristic="inverse")
 sol = n_queens_test.solve(use_ac3=True, fc=True)
 print(n, sol)
+end = time.time()
+n_queens_test.solution_printer(sol)
+print(f"n = {n}, time = {end - start}")
 
 # # get resolution time for each n between 4 and 20
 # times = []  

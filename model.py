@@ -1,15 +1,16 @@
 import time
 import random
 
+
 class CSP:
     def __init__(self, variables, domains, constraints, var_heuristic="static", val_heuristic="static"):
         self.variables = variables
         self.var_to_index = {var: i for i, var in enumerate(variables)}
         self.domains = domains
-        self.constraints = constraints # array of list of tuples , position [i][j] is a list of tuples that are compatible for variable i and j
+        self.constraints = constraints  # array of list of tuples , position [i][j] is a list of tuples that are compatible for variable i and j
         self.var_heuristic = var_heuristic
         self.val_heuristic = val_heuristic
-    
+
     def is_consistent(self, var, value, assignment):
         # Vérifier si l'assignation est consistante avec les contraintes existantes
         for other_var in assignment:
@@ -24,7 +25,7 @@ class CSP:
         return True
 
     def select_unassigned_variable(self, assignment):
-        #Sélectionne la prochaine variable non assignée en fonction de l'heuristique choisie
+        # Sélectionne la prochaine variable non assignée en fonction de l'heuristique choisie
         unassigned_vars = [v for v in self.variables if v not in assignment]
 
         if self.var_heuristic == "static":
@@ -32,7 +33,8 @@ class CSP:
         elif self.var_heuristic == "MRV":
             # Minimum Remaining Values (MRV): Choisir la variable avec le moins de valeurs possibles dans son domaine
             return min(unassigned_vars,
-                       key=lambda var: len([value for value in self.domains[var] if self.is_consistent(var, value, assignment)]))
+                       key=lambda var: len(
+                           [value for value in self.domains[var] if self.is_consistent(var, value, assignment)]))
         elif self.var_heuristic == "degree":
             # Degree Heuristic: Choisir la variable avec le plus de contraintes sur les autres variables non assignées
             return max(unassigned_vars, key=lambda var: sum(
@@ -40,7 +42,7 @@ class CSP:
         else:
             raise ValueError("Heuristique non reconnue. Choisissez entre 'static', 'MRV', ou 'degree'.")
 
-    def order_domain_values(self, var):
+    def order_domain_values(self, var, assignment):
         """Ordre les valeurs possibles de la variable selon l'heuristique de choix des valeurs."""
         if self.val_heuristic == "static":
             return self.domains[var]
@@ -50,9 +52,24 @@ class CSP:
             values = list(self.domains[var])
             random.shuffle(values)
             return values
+        elif self.val_heuristic == "LCV":
+            # Least Constraining Value (LCV): trie en fonction du nombre de valeurs compatibles restantes pour les voisins
+            return sorted(self.domains[var], key=lambda val: self.count_conflicts(var, val, assignment))
         else:
-            raise ValueError("Heuristique non reconnue. Choisissez entre 'static', 'inverse', ou 'random'.")
+            raise ValueError("Heuristique de valeur non reconnue.")
+        return
 
+    def count_conflicts(self, var, value, assignment):
+        """Compte les conflits introduits par l'attribution de 'value' à 'var'."""
+        count = 0
+        ind_var = self.var_to_index[var]
+        for other_var in self.variables:
+            if other_var != var and other_var not in assignment:
+                ind_other_var = self.var_to_index[other_var]
+                if self.constraints[ind_var][ind_other_var] is not None:
+                    count += sum(1 for val in self.domains[other_var] if
+                                 (value, val) not in self.constraints[ind_var][ind_other_var])
+        return count
 
     def backtrack(self, assignment={}, domains=None, fc=False, time_limit=None, time_start=None):
         # print("assignment", assignment)
@@ -61,11 +78,10 @@ class CSP:
         if len(assignment) == len(self.variables):
             return assignment
         # Sélectionner une variable non assignée
-        unassigned_vars = self.select_unassigned_variable(assignment)
+        var = self.select_unassigned_variable(assignment)
         #  print("unassigned_vars", unassigned_vars)
-        var = unassigned_vars
         # Essayer chaque valeur du domaine de la variable
-        search_domain = self.order_domain_values(var)
+        search_domain = self.order_domain_values(var, assignment)
         new_domains = self.domains.copy()
         for value in search_domain:
             if time_limit is not None:
@@ -85,18 +101,18 @@ class CSP:
                 assignment[var] = value
                 # Continuer la recherche récursive
                 if fc:
-                    result = self.backtrack(assignment, new_domains, fc=fc, time_limit=time_limit, time_start=time_start)
+                    result = self.backtrack(assignment, new_domains, fc=fc, time_limit=time_limit,
+                                            time_start=time_start)
                 else:
                     result = self.backtrack(assignment, domains, fc=fc, time_limit=time_limit, time_start=time_start)
                 if result is not None:
                     return result
-                
+
                 # Si cela ne mène pas à une solution, annuler l'assignation
                 del assignment[var]
-                
-        
+
         return None
-    
+
     def forward_checking(self, var, value, assignment, domains):
         # Mettre à jour les domaines des variables non assignées
         # print("forward checking")
@@ -109,7 +125,8 @@ class CSP:
                     # print("les contraintes sont", self.constraints[ind_var][ind_other_var])
                     # print("la valeur est", value)
                     # print("les valeurs possibles sont", new_domains[other_var])
-                    new_domains[other_var] = [val for val in new_domains[other_var] if (value, val) in self.constraints[ind_var][ind_other_var]]
+                    new_domains[other_var] = [val for val in new_domains[other_var] if
+                                              (value, val) in self.constraints[ind_var][ind_other_var]]
                     # print("les nouvelles valeurs possibles sont", new_domains[other_var])
                     if len(new_domains[other_var]) == 0:
                         # print("empty list")
@@ -118,7 +135,8 @@ class CSP:
 
     def ac3(self, time_limit=None, time_start=None):
         # Implémenter l'algorithme AC3
-        queue = [(x, y) for x in self.variables for y in self.variables if self.constraints[self.var_to_index[x]][self.var_to_index[y]] is not None]
+        queue = [(x, y) for x in self.variables for y in self.variables if
+                 self.constraints[self.var_to_index[x]][self.var_to_index[y]] is not None]
         print(len(queue))
         # print("les arcs a traiter sont", queue)
         # print("les contraintes sont", self.constraints)
@@ -140,8 +158,10 @@ class CSP:
                         if z != x:
                             ind_z = self.var_to_index[z]
                             if self.constraints[ind_x][ind_z] is not None:
-                                self.constraints[ind_x][ind_z] = [(a, b) for a, b in self.constraints[ind_x][ind_z] if a != i]
-                                self.constraints[ind_z][ind_x] = [(a, b) for a, b in self.constraints[ind_z][ind_x] if b != i]
+                                self.constraints[ind_x][ind_z] = [(a, b) for a, b in self.constraints[ind_x][ind_z] if
+                                                                  a != i]
+                                self.constraints[ind_z][ind_x] = [(a, b) for a, b in self.constraints[ind_z][ind_x] if
+                                                                  b != i]
                     # print("i", i, self.constraints[ind_x][ind_y])
                     # on ajoute les arcs si ils n'y sont pas deja
                     arc_to_add = [(z, x) for z in self.variables if z != x]
@@ -152,9 +172,9 @@ class CSP:
                     # print("les nouvelles contraintes sont", self.constraints)
                 if len(self.domains[x]) == 0:
                     return False
-                
+
         return True
-    
+
     def not_supported(self, x, y, i):
         ind_x = self.var_to_index[x]
         ind_y = self.var_to_index[y]
@@ -162,9 +182,7 @@ class CSP:
             if not any([(i, j) in self.constraints[ind_x][ind_y] for j in self.domains[y]]):
                 return True
         return False
-    
-    
-     
+
     def solve(self, use_ac3=True, fc=False, time_limit=None):
         # Appliquer AC3 pour réduire les domaines
         time_start = time.time()
@@ -176,9 +194,9 @@ class CSP:
                 return "No solution found"
         print("AC3 done after", time.time() - time_start)
         assignment = {}
-        result = self.backtrack(assignment=assignment, domains=self.domains.copy(), fc=fc, time_limit=time_limit, time_start=time_start)
+        result = self.backtrack(assignment=assignment, domains=self.domains.copy(), fc=fc, time_limit=time_limit,
+                                time_start=time_start)
         if result is None:
             return "No solution found"
         else:
             return result
-

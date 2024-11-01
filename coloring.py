@@ -24,7 +24,7 @@ def read_file_col(file_path):
     return graph
 
 class COLORING(CSP):
-    def __init__(self, file_path, nb_colors):
+    def __init__(self, file_path, nb_colors, var_heuristic="static", val_heuristic="static"):
         self.graph = read_file_col(file_path)
         print(self.graph)
         self.nb_colors = nb_colors
@@ -32,7 +32,7 @@ class COLORING(CSP):
         domains = {var: list(range(nb_colors)) for var in variables}
         self.var_to_index = {var: i for i, var in enumerate(variables)}
         constraints = self.generate_constraints()
-        super().__init__(variables, domains, constraints)
+        super().__init__(variables, domains, constraints, var_heuristic, val_heuristic)
     
     
     
@@ -117,23 +117,9 @@ class SMALL_COLORING(CSP):
         return constraints
     
 
-project_path = os.getcwd()
-data_path = os.path.join(project_path,"instances/coloring")
-file_name = "david.col.txt"
-file_path = os.path.join(data_path,file_name)
-
-graph = COLORING(file_path, 11)
-print(graph.variables)
-print(graph.domains)
-print(graph.constraints[1][2])
-sol = graph.solve(use_ac3=True)
-print(sol)
-print(graph.is_feasible(sol))
-
-graph.display_sol(sol)
 
 
-def dichotomic_search(file_path, use_ac3=True, time_limit=20):
+def dichotomic_search(file_path, use_ac3=True, fc=False, var_heuristic="static", val_heuristic="static", time_limit=20):
     graph = read_file_col(file_path)
     nb_max_colors = len(graph.nodes())
     nb_min_colors = 1
@@ -142,9 +128,9 @@ def dichotomic_search(file_path, use_ac3=True, time_limit=20):
         print("nb_min_colors", nb_min_colors)
         print("nb_max_colors", nb_max_colors)
         print("nb_colors", nb_colors)
-        graph = COLORING(file_path, nb_colors)
+        graph = COLORING(file_path, nb_colors, var_heuristic, val_heuristic)
         # stop the execution before time is higher than time_limit
-        sol = graph.solve(use_ac3=use_ac3, time_limit=time_limit)
+        sol = graph.solve(use_ac3=use_ac3, fc=fc, time_limit=time_limit)
         if sol == "No solution found":
             nb_min_colors = nb_colors
         else:
@@ -153,19 +139,3 @@ def dichotomic_search(file_path, use_ac3=True, time_limit=20):
         
     return nb_max_colors
 
-print(dichotomic_search(file_path, use_ac3=True, time_limit=20))
-
-
-
-
-
-
-
-
-edges = [(1, 2), (1, 3), (1, 5), (2, 3), (2, 5), (3, 4), (4, 5)]
-graph = SMALL_COLORING(edges, 3)
-print(graph.variables)
-print(graph.domains)
-print(graph.constraints)
-sol = graph.solve(use_ac3=True)
-print(sol)

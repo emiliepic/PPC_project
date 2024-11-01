@@ -36,9 +36,11 @@ class CSP:
                        key=lambda var: len(
                            [value for value in self.domains[var] if self.is_consistent(var, value, assignment)]))
         elif self.var_heuristic == "degree":
-            # Degree Heuristic: Choisir la variable avec le plus de contraintes sur les autres variables non assignées
+            # Degree Heuristic: Choisir la variable avec le plus de contraintes effectives sur les autres variables non assignées
             return max(unassigned_vars, key=lambda var: sum(
-                1 for other_var in self.variables if other_var != var and other_var not in assignment))
+                1 for other_var in self.variables
+                if other_var != var and other_var not in assignment and
+                self.constraints[self.var_to_index[var]][self.var_to_index[other_var]] is not None))
         else:
             raise ValueError("Heuristique non reconnue. Choisissez entre 'static', 'MRV', ou 'degree'.")
 

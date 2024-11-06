@@ -144,11 +144,13 @@ def plot_from_csv(type_problem):
     :param file_path: path to the CSV file with saved results
     """
     # Initialize a dictionary to store execution times per method
+    # Initialize a dictionary to store execution times per method
     data = {}
     instances = set()
 
     file_path = os.path.join(os.getcwd(), "results", f"{type_problem}_results.csv")
 
+    # Read the CSV file
     # Read the CSV file
     with open(file_path, 'r') as csvfile:
         reader = csv.DictReader(csvfile)
@@ -158,8 +160,11 @@ def plot_from_csv(type_problem):
             elif type_problem == "coloring":
                 instance = row['instance']
 
+
             method_key = (row['use_ac3'], row['fc'], row['var_heuristic'], row['val_heuristic'])
             execution_time = float(row['execution_time'])
+
+            # Add instance and its execution time
 
             # Add instance and its execution time
             instances.add(instance)
@@ -168,8 +173,10 @@ def plot_from_csv(type_problem):
             data[method_key][instance] = execution_time
 
     # Convert instances to a sorted list
+    # Convert instances to a sorted list
     instances = sorted(list(instances))
 
+    # Plot execution times for each method
     # Plot execution times for each method
     for method_key, times in data.items():
         use_ac3, fc, var_heuristic, val_heuristic = method_key
@@ -185,6 +192,17 @@ def plot_from_csv(type_problem):
         if valid_times:  # Only plot if there is data
             plt.plot(valid_instances, valid_times, label=label)
 
+        # Get execution times in order of instances, handling missing values
+        execution_times = [times.get(instance, None) for instance in instances]
+
+        # Filter out None values (instances with no execution time)
+        valid_instances = [instance for instance, time in zip(instances, execution_times) if time is not None]
+        valid_times = [time for time in execution_times if time is not None]
+
+        if valid_times:  # Only plot if there is data
+            plt.plot(valid_instances, valid_times, label=label)
+
+    # Add details to the plot
     # Add details to the plot
     plt.xlabel("Instance")
     plt.ylabel("Time (s)")

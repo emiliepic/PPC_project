@@ -2,12 +2,10 @@ from coloring import *
 
 project_path = os.getcwd()
 data_path = os.path.join(project_path,"instances/coloring")
-file_name = "david.col.txt"
-file_name = "fpsol2.i.1.col"
+# file_name = "david.col.txt"
+# file_name = "fpsol2.i.1.col"
 file_name = "myciel4.col.txt"
 file_path = os.path.join(data_path,file_name)
-
-# print(dichotomic_search(file_path, use_ac3=True, fc=True, time_limit=40))
 
 graph = COLORING(file_path, 5)
 print(graph.variables)
@@ -28,3 +26,7 @@ print(graph.domains)
 print(graph.constraints)
 sol = graph.solve(use_ac3=True)
 print(sol)
+
+
+
+print(dichotomic_search(file_path, use_ac3=True, fc=True, time_limit=40))

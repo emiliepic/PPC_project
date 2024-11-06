@@ -238,23 +238,3 @@ def plot_from_csv(type_problem):
     plt.legend()
     plt.show()
 
-
-# file_path = os.path.join(os.getcwd(), "results", "n_queens_results.csv")
-# file_path = os.path.join(os.getcwd(), "results", "coloring_results.csv")
-# plot_from_csv("n_queens")
-# plot_from_csv("coloring")
-
-# # coloring_instances = ["myciel3.col.txt", "myciel4.col.txt", "myciel5.col.txt", "myciel6.col.txt", "myciel7.col.txt"]
-# coloring_instances = ["myciel3.col.txt", "myciel4.col.txt"]
-# coloring_instances = [os.path.join("instances", "coloring", instance) for instance in coloring_instances]
-# queen_instances = range(4, 15)
-
-# for instances, type_problem in zip([coloring_instances, queen_instances], ["coloring", "n_queens"]):
-#     for use_ac3 in [True, False]:
-#         for fc in [True, False]:
-#             methods = []
-#             for var_heuristic in ["static", "MRV", "degree"]:
-#                 for val_heuristic in ["static", "inverse", "random", "LCV"]:
-#                     print(use_ac3, fc, var_heuristic, val_heuristic)
-#                     methods += [{"use_ac3": use_ac3, "fc": fc, "var_heuristic": var_heuristic, "val_heuristic": val_heuristic}]
-#             plot_time_vs_instances_different_methods(instances, methods, type_problem, 30, save=True, plot=False)

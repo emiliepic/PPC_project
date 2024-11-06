@@ -39,7 +39,7 @@ def plot_time_vs_instances_different_methods(instances, methods, type_problem="n
         # Create a CSV file to save the results
         file_path = os.path.join(project_path, "results", f"{type_problem}_results.csv")
         csvfile = open(file_path, 'w', newline='')
-        fieldnames = ['instance', 'use_ac3', 'fc', 'var_heuristic', 'val_heuristic', 'execution_time']
+        fieldnames = ['instance', 'use_ac3', 'use_ac3_meanwhile', 'fc', 'var_heuristic', 'val_heuristic', 'execution_time']
 
         writer = csv.DictWriter(csvfile, fieldnames=fieldnames)
         writer.writeheader()
@@ -52,12 +52,12 @@ def plot_time_vs_instances_different_methods(instances, methods, type_problem="n
             if type_problem == "n_queens":
                 prob = N_QUEENS(instance, method["var_heuristic"], method["val_heuristic"])
                 start = time.time()
-                sol = prob.solve(use_ac3=method["use_ac3"], fc=method["fc"], time_limit=time_limit)
+                sol = prob.solve(use_ac3=method["use_ac3"], use_ac3_meanwhile=method["use_ac3_meanwhile"], fc=method["fc"], time_limit=time_limit)
                 end = time.time()
             elif type_problem == "coloring":
                 start = time.time()
                 prob = COLORING(instance, minima_coloring[os.path.basename(instance)], method["var_heuristic"], method["val_heuristic"])
-                prob.solve(use_ac3=method["use_ac3"], fc=method["fc"], time_limit=time_limit)
+                prob.solve(use_ac3=method["use_ac3"], use_ac3_meanwhile=method["use_ac3_meanwhile"], fc=method["fc"], time_limit=time_limit)
                 end = time.time()
                 
             execution_time = end - start
@@ -69,6 +69,7 @@ def plot_time_vs_instances_different_methods(instances, methods, type_problem="n
                 writer.writerow({
                     'instance': instance,
                     'use_ac3': method["use_ac3"],
+                    'use_ac3_meanwhile': method["use_ac3_meanwhile"],
                     'fc': method["fc"],
                     'var_heuristic': method["var_heuristic"],
                     'val_heuristic': method["val_heuristic"],
@@ -108,7 +109,34 @@ def plot_time_vs_instances_different_methods(instances, methods, type_problem="n
 coloring_instances = ["myciel3.col.txt", "myciel4.col.txt", "myciel5.col.txt", "myciel6.col.txt", "myciel7.col.txt"]
 coloring_instances = [os.path.join("instances", "coloring", instance) for instance in coloring_instances]
 type_problem = "coloring"
+for use_ac3_meanwhile in [True, False]:
+    for fc in [False]:
+        methods = []
+        for var_heuristic in ["static", "MRV", "degree"]:
+        # for var_heuristic in ["static", "MRV"]:
+            for val_heuristic in ["static", "inverse", "random", "LCV"]:
+            # for val_heuristic in ["static"]:
+                print(use_ac3_meanwhile, fc, var_heuristic, val_heuristic)
+                methods += [{"use_ac3": False, "use_ac3_meanwhile": use_ac3_meanwhile, "fc": fc, "var_heuristic": var_heuristic, "val_heuristic": val_heuristic}]
+        plot_time_vs_instances_different_methods(coloring_instances, methods, type_problem, fixed_parameters=["fc", "use_ac3_meanwhile"], time_limit=3, save=True, plot=True)
 
+
+
+queen_instances = range(4, 26)
+type_problem = "n_queens"
+
+for use_ac3_meanwhile in [True, False]:
+    for fc in [False]:
+        methods = []
+        for var_heuristic in ["static", "MRV", "degree"]:
+        # for var_heuristic in ["static"]:
+            for val_heuristic in ["static", "inverse", "random", "LCV"]:
+            # for val_heuristic in ["static"]:
+                print(use_ac3_meanwhile, fc, var_heuristic, val_heuristic)
+                methods += [{"use_ac3": False, "use_ac3_meanwhile": use_ac3_meanwhile, "fc": fc, "var_heuristic": var_heuristic, "val_heuristic": val_heuristic}]
+        plot_time_vs_instances_different_methods(queen_instances, methods, type_problem, fixed_parameters=["fc", "use_ac3"], time_limit=20, save=True, plot=True)
+
+exit()
 
 for use_ac3 in [True, False]:
     for fc in [True, False]:
